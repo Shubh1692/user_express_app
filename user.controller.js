@@ -3,8 +3,9 @@
     const CONFIG = require('./app.config'),
         jwt = require('jsonwebtoken'),
         Q = require("q"),
-        MAIL_CONTROLLER = require("./nodemailer.controller");
+        ;
     module.exports = function (options, USER) {
+        MAIL_CONTROLLER = require("./nodemailer.controller")(options && options.mail_options ? options.mail_options : {})
         let mail_options = {},
             model_options = {},
             session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
