@@ -54,6 +54,7 @@
                 [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
             }, session_secret_key, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
             emailContent = emailContent.replace(/MAIL_CONFIRMATION_TOKEN/g, token);
+            emailContent = emailContent.replace(/MAIL_CONFIRMATION_URL/g, typeof mail_options === 'object' && mail_options.confirmation_mail_url ? mail_options.confirmation_mail_url : '');
             MAIL_CONTROLLER.sendMail({
                 to: email,
                 from: typeof mail_options === 'object' && mail_options.from ? mail_options.from : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.SIGN_UP_MAIL_TEMPLATE.FROM,
@@ -130,6 +131,7 @@
                                 [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
                             }, session_secret_key, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
                             emailContent = emailContent.replace(/RESET_TOKEN/g, token);
+                            emailContent = emailContent.replace(/MAIL_RESET_URL/g, typeof mail_options === 'object' && mail_options.reset_mail_url ? mail_options.reset_mail_url : '');
                             MAIL_CONTROLLER.sendMail({
                                 to: email,
                                 from: typeof mail_options === 'object' && mail_options.from ? mail_options.from : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.FORGET_PASSWORD_MAIL_TEMPLATE.FROM,

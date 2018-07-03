@@ -4,12 +4,12 @@
         USER_MAIL_DEFAULT_TEMPLATE: {
             SIGN_UP_MAIL_TEMPLATE: {
                 SUBJECT: 'Verification mail',
-                BODY: '<p>The engine’s are fired up and you’re on your way to skydiving!</p><p>Please confirm your email address.</p><p>By clicking on the following link, you are confirming your email address and agreeing to Skydive’s Terms of Service.*</p>  <p>&nbsp;</p><p><a href="' + 'https://app.theskydiveapp.com/skydiveMailConfirmation/MAIL_CONFIRMATION_TOKEN' + '">Confirm Email Address </a> </p><p><img style="height: 100px;" src="https://app.theskydiveapp.com/images/img/Skydive_logo_full_50_140x44.png" /><p>',
+                BODY: '<p>Please confirm your email address.</p><p>By clicking on the following link, you are confirming your email address and agreeing to Terms of Service.*</p>  <p>&nbsp;</p><p><a href="' + 'MAIL_CONFIRMATION_URLMAIL_CONFIRMATION_TOKEN' + '">Confirm Email Address </a> </p>',
                 FROM: 'test@test.com'
             },
             FORGET_PASSWORD_MAIL_TEMPLATE: {
                 SUBJECT: 'Reset Password',
-                BODY: '<p>By clicking on the following link, you are reset your account password*</p>  <p>&nbsp;</p><p><a href="' + 'https://app.theskydiveapp.com/resetPassword' + '?token=RESET_TOKEN">Reset Your Password</a> </p><p><img style="height: 100px;" src="https://app.theskydiveapp.com/images/img/Skydive_logo_full_50_140x44.png" /><p>',
+                BODY: '<p>By clicking on the following link, you are reset your account password*</p>  <p>&nbsp;</p><p><a href="' + 'MAIL_RESET_URLRESET_TOKEN">Reset Your Password</a> </p>',
                 FROM: 'test@test.com'
             }
         },
