@@ -5,8 +5,8 @@
         ExtractJWT = require("passport-jwt").ExtractJwt;
     module.exports = function (passport, options, USER) {
         const USER_CONTROLLER = require("./user.controller")(options, USER);
-        const mail_options = {};
-        const model_options = {};
+        let mail_options = {};
+        let model_options = {};
         const session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
         if (typeof options === 'object') {
             mail_options = options.mail_options || {};
