@@ -52,11 +52,17 @@
             user_router.route('/login').post(function (req, res) {
                 console.log(req.body)
                 passport.authenticate('local-login', { session: false }, (error, user) => {
-                    if (error || !user) {
+                    if (error) {
                         return res.status(400).send({
                             msg: 'Error by database',
                             success: false,
                             error: error
+                        });
+                    }
+                    if(!user) {
+                        return res.status(400).send({
+                            msg: 'No user exist',
+                            success: false
                         });
                     }
                     req.login(user, { session: false }, (error) => {
