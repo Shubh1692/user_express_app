@@ -3,7 +3,7 @@
     var Q = require("q"),
         nodemailer = require('nodemailer');
     module.exports = function (mail_options) {
-        const helper = null, sg = null;
+        let helper = null, sg = null;
         if (mail_options.mail_type === 'nodemailer' && typeof mail_options.nodemailer_options === 'object') {
             transporter = nodemailer.createTransport({
                 host: mail_options.nodemailer_options.host,
