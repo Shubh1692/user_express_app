@@ -12,7 +12,15 @@
       [typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password']: {
         type: String,
         required: [true, 'Password is Require'],
-      }
+      },
+      email_valid: {
+        type: Boolean,
+        default: false
+      },
+      reset_password_flag: {
+        type: Boolean,
+        default: false
+      },
     };
     const user_schema = new mongoose.Schema(Object.assign({}, user_schema_fileds, typeof model_options === 'object' && model_options.other_filed ? model_options.other_filed : {}));
     user_schema.methods.generateHash = function (password) {
