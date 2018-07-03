@@ -2,8 +2,7 @@
     'use strict';
     const CONFIG = require('./app.config'),
         jwt = require('jsonwebtoken'),
-        Q = require("q"),
-        ;
+        Q = require("q");
     module.exports = function (options, USER) {
         MAIL_CONTROLLER = require("./nodemailer.controller")(options && options.mail_options ? options.mail_options : {})
         let mail_options = {},
