@@ -12,6 +12,8 @@
             mail_options = options.mail_options || {};
             model_options = options.model_options || {};
         }
+        let email_filed_name = typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email';
+        let password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
         passport.serializeUser(function (user, done) {
             done(null, {
                 id: user.id
@@ -24,15 +26,17 @@
                 });
         });
         passport.use('local-login', new LocalStrategy({
-            usernameField: typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email',
-            passwordField: typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password',
+            usernameField: email_filed_name,
+            passwordField: password_filed_name,
             passReqToCallback: true
         },
             function (req, email, password, done) {
+                if (typeof email !== 'string' || typeof password !== 'string' || !email.trim().length || !password.trim().length)
+                    return done(null, false, `Please provide ${email_filed_name} or ${password_filed_name}`);
                 process.nextTick(function () {
                     if (email)
                         email = email.toLowerCase();
-                    USER.findOne({ [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email }).
+                    USER.findOne({ [email_filed_name]: email }).
                         exec(function (error, user) {
                             if (error)
                                 return done(error);
@@ -52,15 +56,17 @@
 
             }));
         passport.use('local-signup', new LocalStrategy({
-            usernameField: typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email',
-            passwordField: typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password',
-            passReqToCallback: true // allows us to pass back the entire request to the callback
+            usernameField: email_filed_name,
+            passwordField: password_filed_name,
+            passReqToCallback: true
         },
             function (req, email, password, done) {
+                if (typeof email !== 'string' || typeof password !== 'string' || !email.trim().length || !password.trim().length)
+                    return done(null, false, `Please provide ${email_filed_name} or ${password_filed_name}`);
                 process.nextTick(function () {
                     if (email)
                         email = email.toLowerCase();
-                    USER.findOne({ [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email }, function (error, user) {
+                    USER.findOne({ [email_filed_name]: email }, function (error, user) {
                         if (error)
                             return done(error);
                         if (user) {
@@ -74,18 +80,14 @@
                             new_user.save(function (error, updatedUser) {
                                 if (error)
                                     return done(error);
-                                new_user.save(function (error, new_user) {
-                                    if (error)
-                                        return done(error);
-                                    if (mail_options.mail_on_sign_up) {
-                                        return USER_CONTROLLER.sendConfirmationMail(new_user).then(function (success) {
-                                            return done(null, new_user);
-                                        }, function (error) {
-                                            return done(null, new_user);
-                                        });
-                                    }
-                                    return done(null, new_user);
-                                });
+                                if (mail_options.mail_on_sign_up) {
+                                    return USER_CONTROLLER.sendConfirmationMail(updatedUser).then(function () {
+                                        return done(null, updatedUser);
+                                    }, function () {
+                                        return done(null, updatedUser);
+                                    });
+                                }
+                                return done(null, updatedUser);
                             });
                         }
                     });
@@ -96,7 +98,7 @@
             secretOrKey: session_secret_key
         },
             function (jwtPayload, done) {
-                return User.findById(jwtPayload.id)
+                return USER.findById(jwtPayload.id)
                     .exec(function (err, user) {
                         if (err)
                             return done(err);

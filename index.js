@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    module.exports = function (options) {
+    function user_express_app (options) {
         let port, mongo_options = {};
         if (typeof options === 'object' && typeof options.mongo_options === 'object') {
             mongo_options = options.mongo_options;
@@ -48,4 +48,6 @@
         app.listen(app.get('port'));
         return app;
     }
+   // user_express_app()
+    module.exports = user_express_app;
 })();

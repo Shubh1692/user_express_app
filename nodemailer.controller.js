@@ -25,7 +25,7 @@
             helper = require('sendgrid').mail;
             sg = require('sendgrid')(mail_options.sendgrid_options.api_key);
         } else {
-            throw Error();
+            throw Error('Please provide atleast one email configuration');
         }
         
         function _sendMail(mailOptions) {

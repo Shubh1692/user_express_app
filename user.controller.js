@@ -12,6 +12,8 @@
             mail_options = options.mail_options || {};
             model_options = options.model_options || {};
         }
+        let email_filed_name = typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email';
+        let password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
 
         function _getUserDetail(filter_object) {
             const defer = Q.defer();
@@ -80,7 +82,7 @@
                 if (err) {
                     return defer.reject(err);
                 } else {
-                    USER.findOne({ [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: decoded.email }, function (error, user) {
+                    USER.findOne({ [email_filed_name]: decoded.email }, function (error, user) {
                         if (err)
                             return defer.reject(error);
                         else if (user && user.email_valid) {
@@ -109,7 +111,7 @@
         function _forgetPassword(email) {
             if (email) {
                 User.findOne({
-                    [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
+                    [email_filed_name]: email
                 }, function (error, user) {
                     if (error) {
                         return defer.reject({
@@ -176,7 +178,7 @@
                     });
                 } else {
                     User.findOne({
-                        [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: decoded.email, reset_password_flag: true,
+                        [email_filed_name]: decoded.email, reset_password_flag: true,
                     }, function (error, user) {
                         if (error) {
                             return defer.reject({
@@ -211,7 +213,7 @@
                     });
                 } else {
                     User.findOne({
-                        [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: decoded.email, reset_password_flag: true,
+                        [email_filed_name]: decoded.email, reset_password_flag: true,
                     }, function (error, user) {
                         if (error) {
                             return defer.reject({
@@ -221,7 +223,7 @@
                             });
                         } else if (user) {
                             user.reset_password_flag = false;
-                            user[typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password'] = user.generateHash(password);
+                            user[password_filed_name] = user.generateHash(password);
                             user.save(function (error, user) {
                                 if (error)
                                     return defer.reject({

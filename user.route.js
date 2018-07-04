@@ -5,7 +5,9 @@
         const user_router = require('express').Router(),
             jwt = require('jsonwebtoken');
         let session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
-        let model_options = options && options.model_options ? options.model_options : {}
+        let model_options = options && options.model_options ? options.model_options : {};
+        let email_filed_name = typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email';
+        let password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
         app.use(options && options.main_route ? options.main_route : '/user', user_router);
         if (options && options.same_origin) {
             user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: "Invalid username or password" }), function (req, res) {
@@ -50,9 +52,13 @@
             });
         } else {
             user_router.route('/login').post(function (req, res) {
-                console.log(req.body)
+                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
+                    return res.status(400).send({
+                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
+                        success: false
+                    });
                 passport.authenticate('local-login', { session: false }, (error, user) => {
-                    if (error) {
+                    if (error) { 
                         return res.status(400).send({
                             msg: 'Error by database',
                             success: false,
@@ -86,9 +92,14 @@
                 })(req, res);
             })
             user_router.route('/register').post(function (req, res) {
-                if (typeof req.body.email === 'string')
-                    req.body.email = req.body.email.toLowerCase();
-                USER.findOne({ [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: req.body.email }).
+                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
+                    return res.status(400).send({
+                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
+                        success: false
+                    });
+                req.body[email_filed_name] = req.body[email_filed_name].toLowerCase();
+                    
+                USER.findOne({ [email_filed_name]: req.body[email_filed_name] }).
                     exec(function (error, user) {
                         if (error)
                             return res.status(400).send({
@@ -102,7 +113,7 @@
                                 success: false,
                             });;
                         var new_user = new USER(req.body);
-                        new_user.generateHash(req.body.password);
+                        new_user.generateHash(req.body[password_filed_name]);
                         new_user.save(function (err, user) {
                             if (error)
                                 return res.status(400).send({
@@ -150,7 +161,7 @@
                 }
             });
         }
-        user_router.route('/').post(_isAuthenticate, function (req, res) {
+        user_router.route('/').post((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }) , function (req, res) {
             USER_CONTROLLER.getUserDetail({
                 _id: req.user._id
             }).then(function (success) {
@@ -159,7 +170,7 @@
                 res.status(400).send(error);
             })
         });
-        user_router.route('/:id').put(_isAuthenticate, function (req, res) {
+        user_router.route('/:id').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
             USER_CONTROLLER.editUserDetail(req.param.id, req.body).then(function (success) {
                 res.status(200).send(success);
             }, function name(error) {
@@ -207,7 +218,7 @@
             })
         });
 
-        user_router.route('/changePassword').put(_isAuthenticate, function (req, res) {
+        user_router.route('/changePassword').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
             USER_CONTROLLER.changePassword(req.body.old_password, req.body.new_password, req.user.id).then(function (success) {
                 res.status(200).send(success);
             }, function name(error) {
