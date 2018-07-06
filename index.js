@@ -44,9 +44,13 @@
         app.use(passport.initialize());
         app.use(passport.session());
         require('./user.route')(app, passport, options, USER);
+        
         app.set('port', (process.env.PORT || port || CONFIG.NODE_SERVER_PORT));
         app.listen(app.get('port'));
-        return app;
+        return {
+            app: app,
+            auth_middleware: (options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false })
+        };
     }
    // user_express_app()
     module.exports = user_express_app;
