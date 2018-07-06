@@ -30,6 +30,7 @@
                     users: users
                 });
             });
+            return defer.promise;
         }
 
         function _saveUserDetail(user_infomation) {
@@ -48,9 +49,11 @@
                     user: user
                 });
             });
+            return defer.promise;
         }
 
         function _sendConfirmationMail(email) {
+            const defer = Q.defer();
             var emailContent = typeof mail_options === 'object' && mail_options.signup_body ? mail_options.signup_body : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.SIGN_UP_MAIL_TEMPLATE.BODY;
             var token = jwt.sign({
                 [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
@@ -75,9 +78,11 @@
                     mail_error: error
                 });
             });
+            return defer.promise;
         }
 
         function _verifyConfirmationToken(token) {
+            const defer = Q.defer();
             jwt.verify(token, session_secret_key, function (err, decoded) {
                 if (err) {
                     return defer.reject(err);
@@ -106,9 +111,11 @@
                     });
                 }
             });
+            return defer.promise;
         }
 
         function _forgetPassword(email) {
+            const defer = Q.defer();
             if (email) {
                 User.findOne({
                     [email_filed_name]: email
@@ -166,9 +173,11 @@
                     success: false
                 });
             }
+            return defer.promise;
         }
 
         function _verifyResetLink(token) {
+            const defer = Q.defer();
             jwt.verify(token, session_secret_key, function (err, decoded) {
                 if (error) {
                     return defer.reject({
@@ -201,9 +210,11 @@
                     });
                 }
             });
+            return defer.promise;
         }
 
         function _resetPassword(token, password) {
+            const defer = Q.defer();
             jwt.verify(token, session_secret_key, function (err, decoded) {
                 if (error) {
                     return defer.reject({
@@ -251,9 +262,11 @@
                     });
                 }
             });
+            return defer.promise;
         }
 
         function _changePassword(old_password, new_password, user_id) {
+            const defer = Q.defer();
             if (typeof user_id === 'string' && user_id.trim().length && typeof old_password === 'string' && old_password.trim().length && typeof new_password === 'string' && new_password.trim().length) {
                 USER.findOne({
                     _id: user_id
@@ -299,9 +312,11 @@
                     success: false
                 });
             }
+            return defer.promise;
         }
 
         function _editUserDetail(user_id, user_infomation) {
+            const defer = Q.defer();
             USER.findOneAndUpdate({
                 _id: user_id
             }, user_infomation, { new: true }, function (error, user) {
@@ -317,6 +332,7 @@
                     user: user
                 });
             });
+            return defer.promise;
         }
 
         return {

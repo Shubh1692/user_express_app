@@ -8,7 +8,7 @@
 
         const session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
         port = options && options.port ? options.port : null;
-        const USER = require('./user.model')(options),
+        const USER = require('./user.model')(options && options.model_options ? options.model_options : {}),
             app = require('express')(),
             mongoose = require('mongoose'),
             passport = require('passport'),

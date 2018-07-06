@@ -161,7 +161,7 @@
                 }
             });
         }
-        user_router.route('/').post((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }) , function (req, res) {
+        user_router.route('/').get((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }) , function (req, res) {
             USER_CONTROLLER.getUserDetail({
                 _id: req.user._id
             }).then(function (success) {
