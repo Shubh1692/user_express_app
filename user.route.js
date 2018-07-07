@@ -2,18 +2,15 @@
 'use strict';
 const CONFIG = require('./app.config');
 const UserController = require('./user.controller');
-const UserRoute = class UserRoute {
-    constructor(app, passport, options, USER) {
-        this.initialize(app, passport, options, USER);
-    }
+const privateMethods = {
     initialize(app, passport, options, USER) {
         const UserControllerInstance = new UserController(options, USER);
         const user_router = require('express').Router(),
             jwt = require('jsonwebtoken');
-        this.session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
-        this.model_options = options && options.model_options ? options.model_options : {};
-        this.email_filed_name = typeof this.model_options === 'object' && this.model_options.email_filed_name ? this.model_options.email_filed_name : 'email';
-        this.password_filed_name = typeof this.model_options === 'object' && this.model_options.password_filed_name ? this.model_options.password_filed_name : 'password';
+        const session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
+        const model_options = options && options.model_options ? options.model_options : {};
+        const email_filed_name = typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email';
+        const password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
         app.use(options && options.main_route ? options.main_route : '/user', user_router);
         if (options && options.same_origin) {
             user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: 'Invalid username or password' }), (req, res) => {
@@ -54,9 +51,9 @@ const UserRoute = class UserRoute {
             });
         } else {
             user_router.route('/login').post((req, res) => {
-                if (typeof req.body[this.email_filed_name] !== 'string' || typeof req.body[this.password_filed_name] !== 'string' || !req.body[this.email_filed_name].trim().length || !req.body[this.password_filed_name].trim().length)
+                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
                     return res.status(400).send({
-                        msg: `Please provide ${this.email_filed_name} or ${this.password_filed_name}`,
+                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
                         success: false
                     });
                 passport.authenticate('local-login', { session: false }, (error, user) => {
@@ -83,7 +80,7 @@ const UserRoute = class UserRoute {
                         }
                         const token = jwt.sign({
                             id: user._id
-                        }, this.session_secret_key);
+                        }, session_secret_key);
                         return res.status(200).json({
                             token: token,
                             msg: 'Successfully login',
@@ -94,14 +91,14 @@ const UserRoute = class UserRoute {
                 })(req, res);
             });
             user_router.route('/register').post((req, res) => {
-                if (typeof req.body[this.email_filed_name] !== 'string' || typeof req.body[this.password_filed_name] !== 'string' || !req.body[this.email_filed_name].trim().length || !req.body[this.password_filed_name].trim().length)
+                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
                     return res.status(400).send({
-                        msg: `Please provide ${this.email_filed_name} or ${this.password_filed_name}`,
+                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
                         success: false
                     });
-                req.body[this.email_filed_name] = req.body[this.email_filed_name].toLowerCase();
+                req.body[email_filed_name] = req.body[email_filed_name].toLowerCase();
 
-                USER.findOne({ [this.email_filed_name]: req.body[this.email_filed_name] }).
+                USER.findOne({ [email_filed_name]: req.body[email_filed_name] }).
                     exec((error, user) => {
                         if (error)
                             return res.status(400).send({
@@ -115,7 +112,7 @@ const UserRoute = class UserRoute {
                                 success: false,
                             });
                         var new_user = new USER(req.body);
-                        new_user.generateHash(req.body[this.password_filed_name]);
+                        new_user.generateHash(req.body[password_filed_name]);
                         new_user.save((error, user) => {
                             if (error)
                                 return res.status(400).send({
@@ -182,8 +179,8 @@ const UserRoute = class UserRoute {
         });
 
         user_router.route('/').put((options && options.same_origin) ? this.isAuthenticate : passport.authenticate('jwt', { session: false }), (req, res) => {
-            delete req.body[this.email_filed_name];
-            delete req.body[this.password_filed_name];
+            delete req.body[email_filed_name];
+            delete req.body[password_filed_name];
             UserControllerInstance.editUserDetail(req.user._id, req.body)
                 .then((success) => {
                     res.status(200).send(success);
@@ -229,7 +226,7 @@ const UserRoute = class UserRoute {
         });
 
         user_router.route('/resetPassword').post((req, res) => {
-            UserControllerInstance.resetPassword(req.body.token, req.body[this.password_filed_name])
+            UserControllerInstance.resetPassword(req.body.token, req.body[password_filed_name])
                 .then((success) => {
                     res.status(200).send(success);
                 }, (error) => {
@@ -237,6 +234,13 @@ const UserRoute = class UserRoute {
                 });
         });
     }
+};
+
+class UserRoute {
+    constructor(app, passport, options, USER) {
+        privateMethods.initialize.call(this,app, passport, options, USER);
+    }
+   
     isAuthenticate(req, res, done) {
         if (req.user) {
             req.session._garbage = Date();
@@ -250,5 +254,5 @@ const UserRoute = class UserRoute {
             });
         }
     }
-};
+}
 module.exports = UserRoute;
