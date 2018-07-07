@@ -1,35 +1,40 @@
-(function () {
-    'use strict';
-    module.exports = function (app, passport, options, USER) {
-        const USER_CONTROLLER = require('./user.controller')(options, USER);
+
+'use strict';
+const CONFIG = require('./app.config');
+const UserController = require('./user.controller');
+const UserRoute = class UserRoute {
+    constructor(app, passport, options, USER) {
+        this.initialize(app, passport, options, USER);
+    }
+    initialize(app, passport, options, USER) {
+        const UserControllerInstance = new UserController(options, USER);
         const user_router = require('express').Router(),
             jwt = require('jsonwebtoken');
-        let session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
-        let model_options = options && options.model_options ? options.model_options : {};
-        let email_filed_name = typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email';
-        let password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
+        this.session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
+        this.model_options = options && options.model_options ? options.model_options : {};
+        this.email_filed_name = typeof this.model_options === 'object' && this.model_options.email_filed_name ? this.model_options.email_filed_name : 'email';
+        this.password_filed_name = typeof this.model_options === 'object' && this.model_options.password_filed_name ? this.model_options.password_filed_name : 'password';
         app.use(options && options.main_route ? options.main_route : '/user', user_router);
         if (options && options.same_origin) {
-            user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: 'Invalid username or password' }), function (req, res) {
+            user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: 'Invalid username or password' }), (req, res) => {
                 res.status(200).send({
                     msg: 'Successfully signup',
                     user: req.user,
                     success: true
                 });
             });
-            user_router.route('/login').post(passport.authenticate('local-login', { failureMessage: 'Invalid username or password' }), function (req, res) {
+            user_router.route('/login').post(passport.authenticate('local-login', { failureMessage: 'Invalid username or password' }), (req, res) => {
                 res.status(200).send({
                     msg: 'Successfully login',
                     user: req.user,
                     success: true
                 });
             });
-            user_router.route('/logout').post(function (req, res) {
+            user_router.route('/logout').post((req, res) => {
                 if (req.user) {
                     if (typeof req.session === 'function') {
-                        return req.session.destroy(function (err) {
+                        return req.session.destroy(() => {
                             res.status(200).json({
-                                token: token,
                                 msg: 'Successfully logout',
                                 success: true
                             });
@@ -37,24 +42,21 @@
                     } else {
                         req.logout();
                         res.status(200).json({
-                            token: token,
                             msg: 'Successfully logout',
-
                         });
                     }
                 } else {
                     res.status(200).json({
-                        token: token,
                         msg: 'Successfully logout',
                         success: true
                     });
                 }
             });
         } else {
-            user_router.route('/login').post(function (req, res) {
-                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
+            user_router.route('/login').post((req, res) => {
+                if (typeof req.body[this.email_filed_name] !== 'string' || typeof req.body[this.password_filed_name] !== 'string' || !req.body[this.email_filed_name].trim().length || !req.body[this.password_filed_name].trim().length)
                     return res.status(400).send({
-                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
+                        msg: `Please provide ${this.email_filed_name} or ${this.password_filed_name}`,
                         success: false
                     });
                 passport.authenticate('local-login', { session: false }, (error, user) => {
@@ -81,7 +83,7 @@
                         }
                         const token = jwt.sign({
                             id: user._id
-                        }, session_secret_key);
+                        }, this.session_secret_key);
                         return res.status(200).json({
                             token: token,
                             msg: 'Successfully login',
@@ -90,17 +92,17 @@
                         });
                     });
                 })(req, res);
-            })
-            user_router.route('/register').post(function (req, res) {
-                if (typeof req.body[email_filed_name] !== 'string' || typeof req.body[password_filed_name] !== 'string' || !req.body[email_filed_name].trim().length || !req.body[password_filed_name].trim().length)
+            });
+            user_router.route('/register').post((req, res) => {
+                if (typeof req.body[this.email_filed_name] !== 'string' || typeof req.body[this.password_filed_name] !== 'string' || !req.body[this.email_filed_name].trim().length || !req.body[this.password_filed_name].trim().length)
                     return res.status(400).send({
-                        msg: `Please provide ${email_filed_name} or ${password_filed_name}`,
+                        msg: `Please provide ${this.email_filed_name} or ${this.password_filed_name}`,
                         success: false
                     });
-                req.body[email_filed_name] = req.body[email_filed_name].toLowerCase();
+                req.body[this.email_filed_name] = req.body[this.email_filed_name].toLowerCase();
 
-                USER.findOne({ [email_filed_name]: req.body[email_filed_name] }).
-                    exec(function (error, user) {
+                USER.findOne({ [this.email_filed_name]: req.body[this.email_filed_name] }).
+                    exec((error, user) => {
                         if (error)
                             return res.status(400).send({
                                 msg: 'Error by database',
@@ -111,10 +113,10 @@
                             return res.status(400).send({
                                 msg: 'User already exist',
                                 success: false,
-                            });;
+                            });
                         var new_user = new USER(req.body);
-                        new_user.generateHash(req.body[password_filed_name]);
-                        new_user.save(function (err, user) {
+                        new_user.generateHash(req.body[this.password_filed_name]);
+                        new_user.save((error, user) => {
                             if (error)
                                 return res.status(400).send({
                                     msg: 'Error by database',
@@ -135,120 +137,118 @@
                         });
                     });
             });
-            user_router.route('/logout').post(passport.authenticate('jwt', { session: false }), function (req, res) {
+            user_router.route('/logout').post(passport.authenticate('jwt', { session: false }), (req, res) => {
                 if (req.user) {
                     if (typeof req.session === 'function') {
-                        return req.session.destroy(function (err) {
+                        return req.session.destroy(() => {
                             res.status(200).json({
-                                token: token,
+                                success: true,
                                 msg: 'Successfully logout'
-
                             });
                         });
                     } else {
                         req.logout();
                         res.status(200).json({
-                            token: token,
+                            success: true,
                             msg: 'Successfully logout'
-
                         });
                     }
                 } else {
                     res.status(200).json({
-                        token: token,
+                        success: true,
                         msg: 'Successfully logout'
                     });
                 }
             });
         }
-        user_router.route('/').get((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
-            USER_CONTROLLER.getUserDetail({
+        user_router.route('/').get((options && options.same_origin) ? this.isAuthenticate : passport.authenticate('jwt', { session: false }), (req, res) => {
+            UserControllerInstance.getUserDetail({
                 _id: req.user._id
             })
-                .then(function (success) {
+                .then((success) => {
                     res.status(200).send(success);
-                }, function name(error) {
-                    res.status(400).send(error);
-                })
-        });
-
-        user_router.route('/changePassword').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
-            USER_CONTROLLER.changePassword(req.body.old_password, req.body.new_password, req.user.id)
-                .then(function (success) {
-                    res.status(200).send(success);
-                }, function name(error) {
+                }, (error) => {
                     res.status(400).send(error);
                 });
         });
 
-        user_router.route('/').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
-            delete req.body[email_filed_name];
-            delete req.body[password_filed_name];
-            USER_CONTROLLER.editUserDetail(req.user._id, req.body)
-                .then(function (success) {
+        user_router.route('/changePassword').put((options && options.same_origin) ? this.isAuthenticate : passport.authenticate('jwt', { session: false }), (req, res) => {
+            UserControllerInstance.changePassword(req.body.old_password, req.body.new_password, req.user.id)
+                .then((success) => {
                     res.status(200).send(success);
-                }, function name(error) {
-                    res.status(400).send(error);
-                })
-        });
-
-        user_router.route('/sendConfirmationMail/:email').get(function (req, res) {
-            USER_CONTROLLER.sendConfirmationMail(req.param.email).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
-        });
-
-        user_router.route('/verifyConfirmationToken/:token').get(function (req, res) {
-            USER_CONTROLLER.verifyConfirmationToken(req.params.token)
-                .then(function (success) {
-                    res.status(200).send(success);
-                }, function name(error) {
+                }, (error) => {
                     res.status(400).send(error);
                 });
         });
 
-        user_router.route('/forgetPassword/:email').get(function (req, res) {
-            USER_CONTROLLER.forgetPassword(req.params.email)
-                .then(function (success) {
+        user_router.route('/').put((options && options.same_origin) ? this.isAuthenticate : passport.authenticate('jwt', { session: false }), (req, res) => {
+            delete req.body[this.email_filed_name];
+            delete req.body[this.password_filed_name];
+            UserControllerInstance.editUserDetail(req.user._id, req.body)
+                .then((success) => {
                     res.status(200).send(success);
-                }, function name(error) {
+                }, (error) => {
                     res.status(400).send(error);
                 });
         });
 
-        user_router.route('/verifyResetLink/:token').get(function (req, res) {
-            USER_CONTROLLER.verifyResetLink(req.params.token)
-                .then(function (success) {
+        user_router.route('/sendConfirmationMail/:email').get((req, res) => {
+            UserControllerInstance.sendConfirmationMail(req.param.email)
+                .then((success) => {
                     res.status(200).send(success);
-                }, function name(error) {
+                }, (error) => {
                     res.status(400).send(error);
                 });
         });
 
-        user_router.route('/resetPassword').post(function (req, res) {
-            USER_CONTROLLER.resetPassword(req.body.token, req.body[password_filed_name])
-                .then(function (success) {
+        user_router.route('/verifyConfirmationToken/:token').get((req, res) => {
+            UserControllerInstance.verifyConfirmationToken(req.params.token)
+                .then((success) => {
                     res.status(200).send(success);
-                }, function name(error) {
+                }, (error) => {
                     res.status(400).send(error);
                 });
         });
 
-
-        function _isAuthenticate(req, res, done) {
-            if (req.user) {
-                req.session._garbage = Date();
-                req.session.touch();
-                req.session.cookie.expires = CONFIG.EXPRESS_SESSION.COKKIES_MAX_AGE;
-                done();
-            } else {
-                res.status(401).send({
-                    message: 'unauthorized',
-                    success: false
+        user_router.route('/forgetPassword/:email').get((req, res) => {
+            UserControllerInstance.forgetPassword(req.params.email)
+                .then((success) => {
+                    res.status(200).send(success);
+                }, (error) => {
+                    res.status(400).send(error);
                 });
-            }
+        });
+
+        user_router.route('/verifyResetLink/:token').get((req, res) => {
+            UserControllerInstance.verifyResetLink(req.params.token)
+                .then((success) => {
+                    res.status(200).send(success);
+                }, (error) => {
+                    res.status(400).send(error);
+                });
+        });
+
+        user_router.route('/resetPassword').post((req, res) => {
+            UserControllerInstance.resetPassword(req.body.token, req.body[this.password_filed_name])
+                .then((success) => {
+                    res.status(200).send(success);
+                }, (error) => {
+                    res.status(400).send(error);
+                });
+        });
+    }
+    isAuthenticate(req, res, done) {
+        if (req.user) {
+            req.session._garbage = Date();
+            req.session.touch();
+            req.session.cookie.expires = CONFIG.EXPRESS_SESSION.COKKIES_MAX_AGE;
+            done();
+        } else {
+            res.status(401).send({
+                message: 'unauthorized',
+                success: false
+            });
         }
     }
-})();
+};
+module.exports = UserRoute;
