@@ -1,10 +1,10 @@
 (function () {
     'use strict';
     const LocalStrategy = require('passport-local').Strategy,
-        JWTStrategy = require("passport-jwt").Strategy,
-        ExtractJWT = require("passport-jwt").ExtractJwt;
+        JWTStrategy = require('passport-jwt').Strategy,
+        ExtractJWT = require('passport-jwt').ExtractJwt;
     module.exports = function (passport, options, USER) {
-        const USER_CONTROLLER = require("./user.controller")(options, USER);
+        const USER_CONTROLLER = require('./user.controller')(options, USER);
         let mail_options = {};
         let model_options = {};
         const session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
@@ -41,9 +41,9 @@
                             if (error)
                                 return done(error);
                             if (!user)
-                                return done(null, false, 'No user found.');
+                                return done('No user found.', false, 'No user found.');
                             if (!user.validPassword(password))
-                                return done(null, false, 'Oops! Wrong password.');
+                                return done('Oops! Wrong password.', false, 'Oops! Wrong password.');
                             user.reset_password_flag = false;
                             user.last_login = new Date();
                             user.save(function (error, user) {
@@ -73,8 +73,8 @@
                             return done(null, false, 'This email already registred.');
                         } else {
                             var new_user = new USER();
-                            new_user.email = email;
-                            new_user.password = new_user.generateHash(password);
+                            new_user[email_filed_name] = email;
+                            new_user[password_filed_name] = new_user.generateHash(password);
                             new_user.last_login = new Date();
                             new_user.email_valid = false;
                             new_user.save(function (error, updatedUser) {

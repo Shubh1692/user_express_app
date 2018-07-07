@@ -2,9 +2,10 @@
     'use strict';
     const CONFIG = require('./app.config'),
         jwt = require('jsonwebtoken'),
-        Q = require("q");
+        mongoose = require('mongoose'),
+        Q = require('q');
     module.exports = function (options, USER) {
-        const MAIL_CONTROLLER = require("./nodemailer.controller")(options && options.mail_options ? options.mail_options : {})
+        const MAIL_CONTROLLER = require('./nodemailer.controller')(options && options.mail_options ? options.mail_options : {})
         let mail_options = {},
             model_options = {},
             session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
@@ -57,7 +58,7 @@
             var emailContent = typeof mail_options === 'object' && mail_options.signup_body ? mail_options.signup_body : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.SIGN_UP_MAIL_TEMPLATE.BODY;
             var token = jwt.sign({
                 [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
-            }, session_secret_key, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
+            },  `${session_secret_key}_confirm`, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
             emailContent = emailContent.replace(/MAIL_CONFIRMATION_TOKEN/g, token);
             emailContent = emailContent.replace(/MAIL_CONFIRMATION_URL/g, typeof mail_options === 'object' && mail_options.confirmation_mail_url ? mail_options.confirmation_mail_url : '');
             MAIL_CONTROLLER.sendMail({
@@ -83,11 +84,15 @@
 
         function _verifyConfirmationToken(token) {
             const defer = Q.defer();
-            jwt.verify(token, session_secret_key, function (err, decoded) {
-                if (err) {
-                    return defer.reject(err);
+            jwt.verify(token,  `${session_secret_key}_confirm`, function (error, decoded) {
+                if (error) {
+                    return defer.reject({
+                        msg: typeof error === 'object' && error.message ? error.message : 'Your token has been expired',
+                        success: false,
+                        error: error
+                    });
                 } else {
-                    USER.findOne({ [email_filed_name]: decoded.email }, function (error, user) {
+                    USER.findOne({ [email_filed_name]: decoded[email_filed_name]}, function (error, user) {
                         if (err)
                             return defer.reject(error);
                         else if (user && user.email_valid) {
@@ -117,7 +122,7 @@
         function _forgetPassword(email) {
             const defer = Q.defer();
             if (email) {
-                User.findOne({
+                USER.findOne({
                     [email_filed_name]: email
                 }, function (error, user) {
                     if (error) {
@@ -128,17 +133,17 @@
                         });
                     } else if (user) {
                         user.reset_password_flag = true;
-                        user.save(function (error, user) {
+                        user.save(function (error) {
                             if (error)
                                 return defer.reject({
                                     msg: 'Error by database',
                                     success: false,
                                     error: error
                                 });
-                            var emailContent = typeof mail_options === 'object' && mail_options.signup_body ? mail_options.signup_body : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.RESET_PASSWORD_MAIL_TEMPLATE.BODY;
+                            var emailContent = typeof mail_options === 'object' && mail_options.forget_body ? mail_options.forget_body : CONFIG.USER_MAIL_DEFAULT_TEMPLATE.FORGET_PASSWORD_MAIL_TEMPLATE.BODY;
                             var token = jwt.sign({
                                 [typeof model_options === 'object' && model_options.email_filed_name ? model_options.email_filed_name : 'email']: email
-                            }, session_secret_key, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
+                            },  `${session_secret_key}_forget`, { expiresIn: typeof mail_options === 'object' && mail_options.exprire_in ? mail_options.exprire_in : '1h' });
                             emailContent = emailContent.replace(/RESET_TOKEN/g, token);
                             emailContent = emailContent.replace(/MAIL_RESET_URL/g, typeof mail_options === 'object' && mail_options.reset_mail_url ? mail_options.reset_mail_url : '');
                             MAIL_CONTROLLER.sendMail({
@@ -168,7 +173,7 @@
                     }
                 })
             } else {
-                return defer.reject({
+                defer.reject({
                     msg: 'Provide valid email for send forget password link.',
                     success: false
                 });
@@ -178,22 +183,28 @@
 
         function _verifyResetLink(token) {
             const defer = Q.defer();
-            jwt.verify(token, session_secret_key, function (err, decoded) {
+            jwt.verify(token,  `${session_secret_key}_forget`, function (error, decoded) {
                 if (error) {
                     return defer.reject({
-                        msg: 'Your token has been expired',
+                        msg: typeof error === 'object' && error.message ? error.message : 'Your token has been expired',
                         success: false,
                         error: error
                     });
                 } else {
-                    User.findOne({
-                        [email_filed_name]: decoded.email, reset_password_flag: true,
+                    USER.findOne({
+                        [email_filed_name]: decoded[email_filed_name],
                     }, function (error, user) {
                         if (error) {
                             return defer.reject({
-                                msg: 'Your token has been expired',
+                                msg: 'Error by database',
                                 success: false,
                                 error: error
+                            });
+                        } else if (user && !user.reset_password_flag) {
+                            return defer.reject({
+                                msg: 'Your token has been expired',
+                                success: true,
+                                user: user
                             });
                         } else if (user) {
                             return defer.resolve({
@@ -203,7 +214,7 @@
                             });
                         } else {
                             return defer.reject({
-                                msg: 'Your token has been expired',
+                                msg: 'No user exist',
                                 success: false,
                             });
                         }
@@ -215,22 +226,28 @@
 
         function _resetPassword(token, password) {
             const defer = Q.defer();
-            jwt.verify(token, session_secret_key, function (err, decoded) {
+            jwt.verify(token, `${session_secret_key}_forget`, function (error, decoded) {
                 if (error) {
                     return defer.reject({
-                        msg: 'Your token has been expired',
+                        msg: typeof error === 'object' && error.message ? error.message : 'Your token has been expired',
                         success: false,
                         error: error
                     });
                 } else {
-                    User.findOne({
-                        [email_filed_name]: decoded.email, reset_password_flag: true,
+                    USER.findOne({
+                        [email_filed_name]: decoded[email_filed_name], reset_password_flag: true,
                     }, function (error, user) {
                         if (error) {
                             return defer.reject({
-                                msg: 'Your token has been expired',
+                                msg: 'Error by database',
                                 success: false,
                                 error: error
+                            });
+                        } else if (user && !user.reset_password_flag) {
+                            return defer.reject({
+                                msg: 'Your token has been expired',
+                                success: true,
+                                user: user
                             });
                         } else if (user) {
                             user.reset_password_flag = false;
@@ -307,7 +324,7 @@
                     }
                 })
             } else {
-                return defer.reject({
+                defer.reject({
                     msg: 'Provide old password in oldPassword field or new password in newPassword',
                     success: false
                 });
@@ -317,21 +334,28 @@
 
         function _editUserDetail(user_id, user_infomation) {
             const defer = Q.defer();
-            USER.findOneAndUpdate({
-                _id: user_id
-            }, user_infomation, { new: true }, function (error, user) {
-                if (error)
-                    return defer.reject({
-                        msg: 'Your token has been expired',
-                        success: false,
-                        error: error
+            if (typeof user_infomation === 'object' && Object.keys(user_infomation).length !== 0) {
+                USER.findOneAndUpdate({
+                    _id: user_id
+                }, user_infomation, { new: true }, function (error, user) {
+                    if (error)
+                        return defer.reject({
+                            msg: 'Your token has been expired',
+                            success: false,
+                            error: error
+                        });
+                    return defer.resolve({
+                        msg: 'User update successfully',
+                        success: true,
+                        user: user
                     });
-                return defer.resolve({
-                    msg: 'User update successfully',
-                    success: true,
-                    user: user
                 });
-            });
+            } else {
+                defer.reject({
+                    msg: 'Provide user fields for update',
+                    success: false
+                });
+            }
             return defer.promise;
         }
 

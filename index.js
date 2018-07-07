@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function user_express_app (options) {
+    function user_express_app(options) {
         let port, mongo_options = {};
         if (typeof options === 'object' && typeof options.mongo_options === 'object') {
             mongo_options = options.mongo_options;
@@ -15,12 +15,10 @@
             cookie_parser = require('cookie-parser'),
             body_parser = require('body-parser'),
             session = require('express-session'),
-            mongourl = (mongo_options.mongourl && mongo_options.mongourl ? mongo_options.mongourl : '') || (process.env.MONGODB_URI) || `mongodb://localhost:27017/user_management`,
+            mongourl = (mongo_options.mongourl && mongo_options.mongourl ? mongo_options.mongourl : '') || (global.process.env.MONGODB_URI) || 'mongodb://localhost:27017/user_management',
             CONFIG = require('./app.config'),
             cors = require('cors');
-        mongoose.connect(mongourl, mongo_options && mongo_options.database_options || {}).then(function (success) {
-            console.log('Mongodb connect successfully');
-        }, function (error) {
+        mongoose.connect(mongourl, mongo_options && mongo_options.database_options || {}).then(null, function (error) {
             throw error;
         });
         require('./passport')(passport, options, USER);
@@ -44,14 +42,28 @@
         app.use(passport.initialize());
         app.use(passport.session());
         require('./user.route')(app, passport, options, USER);
-        
-        app.set('port', (process.env.PORT || port || CONFIG.NODE_SERVER_PORT));
+
+        app.set('port', (global.process.env.PORT || port || CONFIG.NODE_SERVER_PORT));
         app.listen(app.get('port'));
         return {
             app: app,
             auth_middleware: (options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false })
         };
+
+        function _isAuthenticate(req, res, done) {
+            if (req.user) {
+                req.session._garbage = Date();
+                req.session.touch();
+                req.session.cookie.expires = CONFIG.EXPRESS_SESSION.COKKIES_MAX_AGE;
+                done();
+            } else {
+                res.status(401).send({
+                    message: 'unauthorized',
+                    success: false
+                });
+            }
+        }
     }
-   // user_express_app()
+
     module.exports = user_express_app;
 })();

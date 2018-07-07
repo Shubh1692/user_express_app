@@ -1,7 +1,7 @@
 (function () {
     'use strict';
     module.exports = function (app, passport, options, USER) {
-        const USER_CONTROLLER = require("./user.controller")(options, USER);
+        const USER_CONTROLLER = require('./user.controller')(options, USER);
         const user_router = require('express').Router(),
             jwt = require('jsonwebtoken');
         let session_secret_key = options && options.session_secret_key ? options.session_secret_key : 'secret';
@@ -10,14 +10,14 @@
         let password_filed_name = typeof model_options === 'object' && model_options.password_filed_name ? model_options.password_filed_name : 'password';
         app.use(options && options.main_route ? options.main_route : '/user', user_router);
         if (options && options.same_origin) {
-            user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: "Invalid username or password" }), function (req, res) {
+            user_router.route('/register').post(passport.authenticate('local-signup', { failureMessage: 'Invalid username or password' }), function (req, res) {
                 res.status(200).send({
                     msg: 'Successfully signup',
                     user: req.user,
                     success: true
                 });
             });
-            user_router.route('/login').post(passport.authenticate('local-login', { failureMessage: "Invalid username or password" }), function (req, res) {
+            user_router.route('/login').post(passport.authenticate('local-login', { failureMessage: 'Invalid username or password' }), function (req, res) {
                 res.status(200).send({
                     msg: 'Successfully login',
                     user: req.user,
@@ -58,14 +58,14 @@
                         success: false
                     });
                 passport.authenticate('local-login', { session: false }, (error, user) => {
-                    if (error) { 
+                    if (error) {
                         return res.status(400).send({
-                            msg: 'Error by database',
+                            msg: typeof error === 'string' ? error : 'Error by database',
                             success: false,
                             error: error
                         });
                     }
-                    if(!user) {
+                    if (!user) {
                         return res.status(400).send({
                             msg: 'No user exist',
                             success: false
@@ -98,7 +98,7 @@
                         success: false
                     });
                 req.body[email_filed_name] = req.body[email_filed_name].toLowerCase();
-                    
+
                 USER.findOne({ [email_filed_name]: req.body[email_filed_name] }).
                     exec(function (error, user) {
                         if (error)
@@ -126,7 +126,7 @@
                                     id: user._id
                                 }, 'user_maagement_key');
                                 return res.status(201).json({
-                                    msg: "Successfully signup",
+                                    msg: 'Successfully signup',
                                     user: user,
                                     token: token,
                                     success: true
@@ -161,21 +161,35 @@
                 }
             });
         }
-        user_router.route('/').get((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }) , function (req, res) {
+        user_router.route('/').get((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
             USER_CONTROLLER.getUserDetail({
                 _id: req.user._id
-            }).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
             })
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                })
         });
-        user_router.route('/:id').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
-            USER_CONTROLLER.editUserDetail(req.param.id, req.body).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
+
+        user_router.route('/changePassword').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
+            USER_CONTROLLER.changePassword(req.body.old_password, req.body.new_password, req.user.id)
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                });
+        });
+
+        user_router.route('/').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
+            delete req.body[email_filed_name];
+            delete req.body[password_filed_name];
+            USER_CONTROLLER.editUserDetail(req.user._id, req.body)
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                })
         });
 
         user_router.route('/sendConfirmationMail/:email').get(function (req, res) {
@@ -187,47 +201,43 @@
         });
 
         user_router.route('/verifyConfirmationToken/:token').get(function (req, res) {
-            USER_CONTROLLER.verifyConfirmationToken(req.param.token).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
+            USER_CONTROLLER.verifyConfirmationToken(req.params.token)
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                });
         });
 
         user_router.route('/forgetPassword/:email').get(function (req, res) {
-            USER_CONTROLLER.forgetPassword(req.param.email).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
+            USER_CONTROLLER.forgetPassword(req.params.email)
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                });
         });
 
-        user_router.route('/verifyResetLink/:token').get( function (req, res) {
-            USER_CONTROLLER.verifyResetLink(req.param.token).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
+        user_router.route('/verifyResetLink/:token').get(function (req, res) {
+            USER_CONTROLLER.verifyResetLink(req.params.token)
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                });
         });
 
         user_router.route('/resetPassword').post(function (req, res) {
-            USER_CONTROLLER.resetPassword(req.body.token, req.body.password).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
-        });
-
-        user_router.route('/changePassword').put((options && options.same_origin) ? _isAuthenticate : passport.authenticate('jwt', { session: false }), function (req, res) {
-            USER_CONTROLLER.changePassword(req.body.old_password, req.body.new_password, req.user.id).then(function (success) {
-                res.status(200).send(success);
-            }, function name(error) {
-                res.status(400).send(error);
-            })
+            USER_CONTROLLER.resetPassword(req.body.token, req.body[password_filed_name])
+                .then(function (success) {
+                    res.status(200).send(success);
+                }, function name(error) {
+                    res.status(400).send(error);
+                });
         });
 
 
-        function _isAuthenticate() {
+        function _isAuthenticate(req, res, done) {
             if (req.user) {
                 req.session._garbage = Date();
                 req.session.touch();
@@ -236,7 +246,7 @@
             } else {
                 res.status(401).send({
                     message: 'unauthorized',
-                    success: true
+                    success: false
                 });
             }
         }
