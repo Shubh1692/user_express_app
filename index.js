@@ -28,7 +28,7 @@ const CONFIG = require('./app.config'),
             mongoose.set('debug', mongo_options.get(this) && mongo_options.get(this).debug ? mongo_options.get(this).debug : false);
             app.use(body_parser.json());
             app.use(body_parser.urlencoded({
-                extended: false
+                extended: true, limit: '50mb'
             }));
 
             app.use(cors());
