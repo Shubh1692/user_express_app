@@ -1,3 +1,4 @@
+const UserExpressApp = require('./index.js');
 new UserExpressApp({
     mail_options: {
         mail_type: 'sendgrid',
