@@ -190,7 +190,7 @@ const privateMethods = {
         });
 
         user_router.route('/sendConfirmationMail/:email').get((req, res) => {
-            UserControllerInstance.sendConfirmationMail(req.param.email)
+            UserControllerInstance.sendConfirmationMail(req.params.email)
                 .then((success) => {
                     res.status(200).send(success);
                 }, (error) => {

@@ -6,6 +6,11 @@ An NPM package for creating a user management rest API for a register, login, fo
 
 npm install user_express_app
 
+
+## Endpoint swaggerhub demo
+https://app.swaggerhub.com/apis/svijay1692/user-express_api_demo/1.0.19
+
+
 ### Configuration and Example
 ```
 const UserExpressApp = require('./index.js');
