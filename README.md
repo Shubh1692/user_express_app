@@ -8,7 +8,7 @@ npm install user_express_app
 
 
 ## Endpoint swaggerhub demo
-https://app.swaggerhub.com/apis/svijay1692/user-express_api_demo/1.0.19
+https://app.swaggerhub.com/apis/svijay1692/user-express_api_demo/1.0.20
 
 
 ### Configuration and Example
