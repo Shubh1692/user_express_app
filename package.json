@@ -1,14 +1,23 @@
 {
   "name": "user_express_app",
-  "version": "1.0.19",
-  "description": "",
+  "version": "1.0.20",
+  "description": "An NPM package for creating a user management rest API for a register, login, forget, log out, changePassword, send confirmation mail, reset the password a user using database MongoDB by Sendgrid or nodemailer NPM packages.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "demo": "node demo.js",
     "start": "node index.js"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shubh1692/user_express_app"
+  },
+  "keywords": [
+    "user_express_app",
+    "express",
+    "user_management_app"
+  ],
+  "author": "Shubham Vijay Vargiy",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^2.0.1",
